@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hairui.boot.mapper.FoodMapper">
+
+
+
+    <select id="findFoodByPage" resultMap="findStore">
+        select f.f_id,f.f_name,f.f_detail,f.f_photo,
+               f.f_kind,f.f_score,f.f_sales,
+               s.s_name,s.s_id,s.s_address
+        from food f,store s
+        where f.s_id=s.s_id and f.is_deleted = 0
+    </select>
+    <resultMap id="findStore" type="com.hairui.boot.entity.Food">
+        <result property="fId" column="f_id"/>
+        <result property="fName" column="f_name"/>
+        <result property="fDetail" column="f_detail"/>
+        <result property="fPhoto" column="f_photo"/>
+        <result property="fKind" column="f_kind"/>
+        <result property="fScore" column="f_score"/>
+        <result property="fSales" column="f_sales"/>
+        <result property="sId" column="s_id"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <association property="store" javaType="com.hairui.boot.entity.Store">
+            <result property="sId" column="s_id"/>
+            <result property="sName" column="s_name"/>
+            <result property="sAddress" column="s_address"/>
+        </association>
+    </resultMap>
+
+    <select id="selectAllFood" resultType="com.hairui.boot.vo.FoodListVo">
+        select f.f_id, f.f_name, f.f_detail, f.f_kind, f.f_score, f.f_sales, s.s_id, s.s_name, s.s_address
+             ,f.f_photo
+        from food f
+        inner join store s
+        on f.s_id = s.s_id
+        where f.is_deleted = 0
+    </select>
+    <select id="selectFormatByFId" resultType="com.hairui.boot.entity.FoodFormat">
+        select *
+        from food_format
+        where f_id = #{fid}
+    </select>
+
+
+    <!--根据id查询食品,不过此方法已被弃用-->
+    <select id="selectFoodById" resultMap="findFormat">
+        select ff.*
+        from food f
+        inner join food_format ff
+        on f.f_id = ff.f_id
+        where f.f_id = #{fId}
+    </select>
+
+    <resultMap id="findFormat" type="com.hairui.boot.vo.FoodUpdateVo">
+      <!--  <result property="fId" column="f_id"/>
+        <result property="fName" column="f_name"/>
+        <result property="fDetail" column="f_detail"/>
+        <result property="fPhoto" column="f_photo"/>
+        <result property="fKind" column="f_kind"/>
+        <result property="fScore" column="f_score"/>
+        <result property="fSales" column="f_sales"/>
+        <result property="sId" column="s_id"/>
+        <result property="isDeleted" column="is_deleted"/>-->
+        <!--由于是一个list数组，那么就要用collection，
+        如果是对象则使用association-->
+        <collection property="foodFormats" ofType="com.hairui.boot.entity.FoodFormat">
+            <result property="ffId" column="ff_id"/>
+            <result property="ffName" column="ff_name"/>
+            <result property="ffPack" column="ff_pack"/>
+            <result property="ffPrice" column="ff_price"/>
+        </collection>
+    </resultMap>
+
+    <!--更新食品方法-->
+    <update id="updateFoodUpdateVo" parameterType="com.hairui.boot.vo.FoodUpdateVo" useGeneratedKeys="true" keyProperty="fId" keyColumn="f_id">
+        update food set f_name = #{fName},f_detail = #{fDetail},
+                        f_kind = #{fKind},f_photo = #{fPhoto}
+        where f_id = #{fId}
+    </update>
+    <update id="updateFoodFormatDeleted" parameterType="com.hairui.boot.vo.FoodUpdateVo">
+        update food_format set is_deleted = 1 where f_id = #{fId}
+    </update>
+
+    <insert id="insertFoodFormat" parameterType="com.hairui.boot.vo.FoodUpdateVo">
+        insert into food_format(ff_name,ff_pack,ff_price,f_id)values
+        <foreach collection="foodFormats" item="format" separator=",">
+           (#{format.ffName},#{format.ffPack},#{format.ffPrice},#{fId})
+        </foreach>
+    </insert>
+
+
+    <!--添加食品-->
+    <insert id="insertFoodInsertVo" parameterType="com.hairui.boot.vo.FoodInsertVo" useGeneratedKeys="true" keyProperty="fId" keyColumn="f_id">
+        insert into food(f_kind,f_name,f_activity,f_detail,f_photo,s_id)values
+        (#{fKind},#{fName},#{fActivity},#{fDetail},#{fPhoto},#{sId})
+    </insert>
+    <insert id="insertFoodTrait" parameterType="com.hairui.boot.vo.FoodInsertVo">
+        insert into food_to_trait(f_id,ft_id)values
+        <foreach collection="foodTraits" item="foodTrait" separator=",">
+            (#{fId},#{foodTrait.ftId})
+        </foreach>
+    </insert>
+    <insert id="insertFoodInsertVoFormat" parameterType="com.hairui.boot.vo.FoodInsertVo">
+        insert into food_format(ff_name,ff_pack,ff_price,f_id)values
+        <foreach collection="foodFormats" item="format" separator=",">
+            (#{format.ffName},#{format.ffPack},#{format.ffPrice},#{fId})
+        </foreach>
+    </insert>
+
+    <!--模糊查询food-->
+    <select id="fuzzyQueryFood" resultType="com.hairui.boot.vo.FoodListVo">
+        select f.f_id, f.f_name, f.f_detail, f.f_kind, f.f_score, f.f_sales, s.s_id, s.s_name, s.s_address
+        from food f
+        inner join store s
+        on f.s_id = s.s_id
+        <where>
+            <if test="fName!=null">
+                f.f_name like concat('%', #{fName}, '%')
+            </if>
+            and f.is_deleted = 0
+        </where>
+
+    </select>
+    <select id="selectFoodAndFormat" resultType="com.hairui.boot.vo.FoodListVo">
+
+    </select>
+
+
+</mapper>

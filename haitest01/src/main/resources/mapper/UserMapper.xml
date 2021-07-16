@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hairui.boot.mapper.UserMapper">
+
+    <select id="fuzzyQueryUser" resultType="com.hairui.boot.entity.User">
+        select * from user
+        <where>
+            <if test="uName!=null">
+                u_name like concat('%', #{uName}, '%')
+            </if>
+            <if test="uAddress!=null">
+                or u_address like concat('%',#{uAddress},'%')
+            </if>
+            and is_deleted = 0
+        </where>
+    </select>
+
+
+    <select id="selectPieCount" resultType="com.hairui.boot.vo.UserPieVo">
+        select count(*) as `value` ,u_address from user group by u_address
+    </select>
+
+
+
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hairui.boot.mapper.StoreMapper">
+
+    <!--<update id="updateStore" parameterType="com.hairui.boot.entity.Store">
+        update store set s_id = #{sId}
+    </update>-->
+
+ <!--   <select id="findStore" resultMap="findClassify">
+        select s.s_id,s.s_name,s.s_address,s.s_phone,s.s_introduce,s.s_slogan,s.cla_id,
+               s.s_cost,s.s_price,s.head_photo,s.s_score,s.s_sales,c.c_name
+        from store s ,classify c
+        where c.c_id = s.cla_id and s.is_deleted=0
+    </select>
+    <resultMap id="findClassify" type="com.hairui.boot.entity.StoreAndClassify">
+        <result property="sId" column="s_id"/>
+        <result property="sName" column="s_name"/>
+        <result property="sAddress" column="s_address"/>
+        <result property="sPhone" column="s_phone"/>
+        <result property="sIntroduce" column="s_introduce"/>
+        <result property="sSlogan" column="s_slogan"/>
+        <result property="claId" column="cla_id"/>
+        <result property="sCost" column="s_cost"/>
+        <result property="sPrice" column="s_price"/>
+        <result property="headPhoto" column="head_photo"/>
+        <result property="sScore" column="s_score"/>
+        <result property="sSales" column="s_sales"/>
+        <result property="isDeleted" column="is_deleted"/>
+        <association property="classify" javaType="com.hairui.boot.entity.Classify">
+            <result property="cId" column="c_id"/>
+            <result property="cName" column="c_name"/>
+        </association>
+    </resultMap>-->
+
+    <select id="findStoreById" resultType="com.hairui.boot.vo.StoreVO">
+        select s.s_id,s.s_name,s.s_address,s.s_phone,s.s_introduce,s.s_slogan,
+               s.cla_id,s.s_begin,s.s_end,s.head_photo,s.buy_photo,s.allow_photo,
+               c.c_name
+        from store s, classify c
+        where s.cla_id = c.c_id and s_id = #{sId}
+    </select>
+    <select id="findStoreByPage" resultType="com.hairui.boot.vo.StoreListVO">
+        select s.s_id,s.s_name,s.s_address,s.s_phone,s.s_introduce,
+               s.s_score,s.s_sales,c.c_name,s.head_photo,s.cla_id
+        from store s, classify c
+        where s.cla_id = c.c_id and s.is_deleted=0
+    </select>
+
+
+    <!--插入商店-->
+    <insert id="insertStoreInsertVo" parameterType="com.hairui.boot.vo.StoreInsertVo" useGeneratedKeys="true" keyProperty="sId" keyColumn="s_id">
+        insert into store (s_name,s_address,s_phone,s_introduce,s_slogan,
+                           cla_id,s_cost,s_price,s_begin,s_end,head_photo,
+                           buy_photo,allow_photo)values
+        (#{sName},#{sAddress},#{sPhone},#{sIntroduce},#{sSlogan},#{claId},
+         #{sCost},#{sPrice},#{sBegin},#{sEnd},#{headPhoto},#{buyPhoto},#{allowPhoto})
+    </insert>
+    <!--在插入中间表时，我们需要商店的id，所以要传入参数StoreInsertVo来获取商店的id，
+    又因为我们需要特点表的id，所以遍历traits集合来获取其中的trait的id-->
+    <insert id="insertStoreTrait" parameterType="com.hairui.boot.vo.StoreInsertVo">
+        insert into store_to_trait(store_id,trait_id)values
+        <foreach collection="traits" item="trait" separator=",">
+            (#{sId},#{trait.tId})
+        </foreach>
+    </insert>
+
+    <insert id="insertStoreDiscount" parameterType="com.hairui.boot.vo.StoreInsertVo">
+       insert into discount(d_title,d_name,d_detail,store_id)values
+        <foreach collection="discounts" item="discount" separator=",">
+            (#{discount.dTitle},#{discount.dName},#{discount.dDetail},#{sId})
+        </foreach>
+    </insert>
+
+    <!--模糊查询商店-->
+    <select id="fuzzyQueryStore" resultType="com.hairui.boot.vo.StoreListVO">
+        select s.s_id,s.s_name,s.s_address,s.s_phone,s.s_introduce,s.s_slogan,
+               s.cla_id,s.s_begin,s.s_end,s.head_photo,s.buy_photo,s.allow_photo,
+               c.c_name
+        from store s, classify c
+        <where>
+            <if test="sName!=null">
+                or s.s_name like concat('%',#{sName},'%')
+            </if>
+            <if test="sPhone!=null">
+                or s.s_phone like concat('%',#{sPhone},'%')
+            </if>
+            <if test="cName!=null">
+                or c.c_name like concat('%',#{cName},'%')
+            </if>
+            and s.cla_id = c.c_id and s.is_deleted=0
+        </where>
+    </select>
+</mapper>
